@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Warehouse Supplies Tracker</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--text:#182230;--muted:#667085;--line:#e4e7ec;--primary:#2563eb;--primary2:#1d4ed8;--green:#16a34a;--yellow:#d97706;--red:#dc2626;--blue:#0891b2}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+.app{display:flex;min-height:100vh}.sidebar{width:245px;background:#111827;color:#fff;padding:22px 15px;position:fixed;top:0;bottom:0}
+.brand{font-size:20px;font-weight:800;padding:8px 12px 24px}.brand span{color:#60a5fa}
+.nav{display:flex;flex-direction:column;gap:7px}.nav button{border:0;background:transparent;color:#cbd5e1;text-align:left;padding:12px 13px;border-radius:9px;font-size:14px;cursor:pointer}.nav button:hover,.nav button.active{background:#1d4ed8;color:#fff}
+.main{margin-left:245px;width:calc(100% - 245px);padding:26px 30px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}.top h1{margin:0;font-size:26px}.sub{color:var(--muted);font-size:13px;margin-top:5px}
+.btn{border:0;border-radius:8px;padding:10px 15px;background:var(--primary);color:white;font-weight:700;cursor:pointer}.btn:hover{background:var(--primary2)}.btn.secondary{background:#fff;color:#344054;border:1px solid var(--line)}
+.page{display:none}.page.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}.card{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:18px}.label{font-size:13px;color:var(--muted)}.value{font-size:28px;font-weight:800;margin-top:7px}.small{font-size:12px;color:var(--muted);margin-top:7px}
+.grid2{display:grid;grid-template-columns:1.35fr .9fr;gap:18px}.panel{background:#fff;border:1px solid var(--line);border-radius:13px;padding:18px}.panel h3{margin:0 0 16px;font-size:16px}
+.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:12px 10px;border-bottom:1px solid #eef0f3;text-align:left;white-space:nowrap}th{color:#475467;background:#fafafa;font-weight:700}.badge{display:inline-block;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:800}.safe{background:#dcfce7;color:#15803d}.low{background:#fef3c7;color:#b45309}.critical{background:#fee2e2;color:#b91c1c}.over{background:#e0e7ff;color:#4338ca}.replenish{background:#cffafe;color:#0e7490}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}.input,.select{padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;min-width:180px}.formgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}.formgrid label{font-size:12px;color:#475467;font-weight:700}.formgrid input,.formgrid select{width:100%;margin-top:6px;padding:10px;border:1px solid var(--line);border-radius:8px}.modal{display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);align-items:center;justify-content:center;padding:20px}.modal.show{display:flex}.modalbox{background:#fff;width:min(620px,100%);border-radius:14px;padding:22px}.modalhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.close{border:0;background:#f2f4f7;border-radius:7px;padding:7px 10px;cursor:pointer}.actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.barrow{display:grid;grid-template-columns:105px 1fr 55px;align-items:center;gap:10px;margin:11px 0;font-size:12px}.bar{height:9px;background:#edf2f7;border-radius:10px;overflow:hidden}.bar i{display:block;height:100%;background:#3b82f6;border-radius:10px}
+.alert{padding:12px;border-radius:9px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:13px;margin-bottom:12px}
+@media(max-width:900px){.sidebar{width:190px}.main{margin-left:190px;width:calc(100% - 190px);padding:20px}.cards{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}}
+@media(max-width:650px){.sidebar{position:static;width:100%;height:auto}.app{display:block}.main{margin:0;width:100%}.cards{grid-template-columns:1fr}.formgrid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand">Supply<span>Track</span></div>
+  <div class="nav">
+    <button class="active" data-page="dashboard">📊 Dashboard</button>
+    <button data-page="master">📦 Master Supplies</button>
+    <button data-page="usage">↗ Pemakaian</button>
+    <button data-page="needs">📝 Kebutuhan</button>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="top">
+    <div><h1 id="title">Dashboard</h1><div class="sub">Monitoring kebutuhan & pemakaian supplies warehouse</div></div>
+    <button class="btn" onclick="openUsage()">+ Input Pemakaian</button>
+  </div>
+
+  <section id="dashboard" class="page active">
+    <div class="cards">
+      <div class="card"><div class="label">Total Supplies</div><div class="value" id="cItems">0</div><div class="small">item aktif</div></div>
+      <div class="card"><div class="label">Total Stok</div><div class="value" id="cStock">0</div><div class="small">unit</div></div>
+      <div class="card"><div class="label">Low / Critical</div><div class="value" id="cLow">0</div><div class="small">perlu perhatian</div></div>
+      <div class="card"><div class="label">Pemakaian Bulan Ini</div><div class="value" id="cUsage">0</div><div class="small">unit keluar</div></div>
+    </div>
+    <div class="grid2">
+      <div class="panel"><h3>Stok & Status Supplies</h3><div class="table-wrap"><table><thead><tr><th>Kode</th><th>Supplies</th><th>Stok</th><th>Min</th><th>Status</th></tr></thead><tbody id="dashTable"></tbody></table></div></div>
+      <div class="panel"><h3>Pemakaian Teratas</h3><div id="usageBars"></div></div>
+    </div>
+  </section>
+
+  <section id="master" class="page">
+    <div class="panel">
+      <div class="toolbar"><input class="input" id="searchMaster" placeholder="Cari kode / nama..." oninput="renderMaster()"><select class="select" id="statusFilter" onchange="renderMaster()"><option value="">Semua status</option><option>AMAN</option><option>LOW STOCK</option><option>CRITICAL</option><option>OVERSTOCK</option></select><button class="btn" onclick="openMaster()">+ Tambah Supplies</button></div>
+      <div class="table-wrap"><table><thead><tr><th>Kode</th><th>Nama</th><th>UoM</th><th>Stok</th><th>Min</th><th>Max</th><th>Supplier</th><th>Status</th></tr></thead><tbody id="masterTable"></tbody></table></div>
+    </div>
+  </section>
+
+  <section id="usage" class="page">
+    <div class="panel">
+      <div class="toolbar"><input class="input" id="searchUsage" placeholder="Cari supplies / user..." oninput="renderUsage()"><button class="btn" onclick="openUsage()">+ Input Pemakaian</button></div>
+      <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Kode</th><th>Supplies</th><th>Qty</th><th>UoM</th><th>User/Dept</th><th>Keterangan</th></tr></thead><tbody id="usageTable"></tbody></table></div>
+    </div>
+  </section>
+
+  <section id="needs" class="page">
+    <div class="panel">
+      <h3>Perhitungan Kebutuhan & Replenishment</h3>
+      <div class="alert">Recommended Order = Kebutuhan Forecast + Safety Stock − Stok Saat Ini. Nilai negatif otomatis menjadi 0.</div>
+      <div class="table-wrap"><table><thead><tr><th>Kode</th><th>Supplies</th><th>Stok</th><th>Forecast</th><th>Safety Stock</th><th>Recommended Order</th><th>Status</th></tr></thead><tbody id="needsTable"></tbody></table></div>
+    </div>
+  </section>
+</main>
+</div>
+
+<div class="modal" id="modal">
+<div class="modalbox">
+ <div class="modalhead"><h3 id="modalTitle" style="margin:0">Input</h3><button class="close" onclick="closeModal()">✕</button></div>
+ <form id="form"></form>
+</div>
+</div>
+
+<script>
+const initialItems=[
+ {code:"SUP001",name:"Karbox",uom:"Pcs",stock:500,min:200,max:1000,supplier:"Supplier A",forecast:650,safety:200},
+ {code:"SUP002",name:"Thermal",uom:"Roll",stock:80,min:50,max:200,supplier:"Supplier B",forecast:140,safety:50},
+ {code:"SUP003",name:"Resi",uom:"Pcs",stock:1200,min:500,max:2000,supplier:"Supplier C",forecast:700,safety:500},
+ {code:"SUP004",name:"Plastic Bag",uom:"Pcs",stock:150,min:200,max:800,supplier:"Supplier D",forecast:500,safety:200},
+ {code:"SUP005",name:"Label Sticker",uom:"Roll",stock:35,min:30,max:100,supplier:"Supplier E",forecast:90,safety:30}
+];
+const initialUsage=[
+ {date:"2026-10-01",code:"SUP001",qty:120,user:"Warehouse",note:"SO Event"},
+ {date:"2026-10-01",code:"SUP002",qty:30,user:"Operations",note:"Daily usage"},
+ {date:"2026-09-30",code:"SUP003",qty:250,user:"Warehouse",note:"Dispatch"},
+ {date:"2026-09-29",code:"SUP001",qty:90,user:"Warehouse",note:"Daily usage"},
+ {date:"2026-09-28",code:"SUP004",qty:180,user:"Packing",note:"Packing"}
+];
+let items=JSON.parse(localStorage.getItem("st_items")||"null")||initialItems;
+let usage=JSON.parse(localStorage.getItem("st_usage")||"null")||initialUsage;
+const save=()=>{localStorage.setItem("st_items",JSON.stringify(items));localStorage.setItem("st_usage",JSON.stringify(usage));};
+
+function status(x){if(x.stock>x.max)return ["OVERSTOCK","over"]; if(x.stock<=x.min*0.5)return ["CRITICAL","critical"]; if(x.stock<=x.min)return ["LOW STOCK","low"]; return ["AMAN","safe"];}
+function money(n){return new Intl.NumberFormat("id-ID").format(n)}
+function render(){
+ document.getElementById("cItems").textContent=items.length;
+ document.getElementById("cStock").textContent=money(items.reduce((a,b)=>a+b.stock,0));
+ document.getElementById("cLow").textContent=items.filter(x=>["LOW STOCK","CRITICAL"].includes(status(x)[0])).length;
+ document.getElementById("cUsage").textContent=money(usage.filter(x=>x.date.slice(0,7)==="2026-10").reduce((a,b)=>a+b.qty,0));
+ renderMaster();renderUsage();renderDash();renderNeeds();
+}
+function renderDash(){
+ document.getElementById("dashTable").innerHTML=items.map(x=>{let s=status(x);return `<tr><td>${x.code}</td><td>${x.name}</td><td>${money(x.stock)} ${x.uom}</td><td>${money(x.min)}</td><td><span class="badge ${s[1]}">${s[0]}</span></td></tr>`}).join("");
+ let totals={};usage.forEach(u=>totals[u.code]=(totals[u.code]||0)+u.qty);
+ let top=Object.entries(totals).sort((a,b)=>b[1]-a[1]).slice(0,5), max=top[0]?.[1]||1;
+ document.getElementById("usageBars").innerHTML=top.length?top.map(([code,q])=>{let x=items.find(i=>i.code===code);return `<div class="barrow"><span>${x?.name||code}</span><div class="bar"><i style="width:${q/max*100}%"></i></div><b>${q}</b></div>`}).join(""):"Belum ada data";
+}
+function renderMaster(){
+ let q=(document.getElementById("searchMaster")?.value||"").toLowerCase(), f=document.getElementById("statusFilter")?.value||"";
+ document.getElementById("masterTable").innerHTML=items.filter(x=>(x.code+x.name).toLowerCase().includes(q)&&(!f||status(x)[0]===f)).map(x=>{let s=status(x);return `<tr><td>${x.code}</td><td><b>${x.name}</b></td><td>${x.uom}</td><td>${money(x.stock)}</td><td>${money(x.min)}</td><td>${money(x.max)}</td><td>${x.supplier}</td><td><span class="badge ${s[1]}">${s[0]}</span></td></tr>`}).join("");
+}
+function renderUsage(){
+ let q=(document.getElementById("searchUsage")?.value||"").toLowerCase();
+ document.getElementById("usageTable").innerHTML=usage.filter(u=>{let x=items.find(i=>i.code===u.code);return (u.code+(x?.name||"")+u.user).toLowerCase().includes(q)}).map(u=>{let x=items.find(i=>i.code===u.code);return `<tr><td>${u.date}</td><td>${u.code}</td><td>${x?.name||"-"}</td><td>${money(u.qty)}</td><td>${x?.uom||"-"}</td><td>${u.user}</td><td>${u.note||"-"}</td></tr>`}).join("");
+}
+function renderNeeds(){
+ document.getElementById("needsTable").innerHTML=items.map(x=>{let order=Math.max(0,x.forecast+x.safety-x.stock);let s=status(x);return `<tr><td>${x.code}</td><td><b>${x.name}</b></td><td>${money(x.stock)}</td><td>${money(x.forecast)}</td><td>${money(x.safety)}</td><td><b>${money(order)} ${x.uom}</b></td><td><span class="badge ${order>0?"replenish":"safe"}>${order>0?"REPLENISH":"CUKUP"}</span></td></tr>`}).join("");
+}
+function openMaster(){
+ document.getElementById("modalTitle").textContent="Tambah Master Supplies";
+ document.getElementById("form").innerHTML=`<div class="formgrid">
+<label>Kode<input name="code" required placeholder="SUP006"></label>
+<label>Nama Supplies<input name="name" required></label>
+<label>UoM<input name="uom" required placeholder="Pcs / Roll / Box"></label>
+<label>Stok Awal<input name="stock" type="number" min="0" required></label>
+<label>Min Stock<input name="min" type="number" min="0" required></label>
+<label>Max Stock<input name="max" type="number" min="0" required></label>
+<label>Supplier<input name="supplier"></label>
+<label>Forecast Bulanan<input name="forecast" type="number" min="0" value="0"></label>
+<label>Safety Stock<input name="safety" type="number" min="0" value="0"></label></div>
+<div class="actions"><button type="button" class="btn secondary" onclick="closeModal()">Batal</button><button class="btn">Simpan</button></div>`;
+ document.getElementById("form").onsubmit=e=>{e.preventDefault();let d=Object.fromEntries(new FormData(e.target));d.stock=+d.stock;d.min=+d.min;d.max=+d.max;d.forecast=+d.forecast;d.safety=+d.safety;items.push(d);save();render();closeModal();};
+ document.getElementById("modal").classList.add("show");
+}
+function openUsage(){
+ document.getElementById("modalTitle").textContent="Input Pemakaian Supplies";
+ document.getElementById("form").innerHTML=`<div class="formgrid">
+<label>Tanggal<input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required></label>
+<label>Supplies<select name="code">${items.map(x=>`<option value="${x.code}">${x.code} - ${x.name} (stok ${x.stock})</option>`).join("")}</select></label>
+<label>Qty Keluar<input name="qty" type="number" min="1" required></label>
+<label>User / Departemen<input name="user" value="Warehouse"></label>
+<label>Keterangan<input name="note" placeholder="Contoh: SO / event / daily usage"></label></div>
+<div class="actions"><button type="button" class="btn secondary" onclick="closeModal()">Batal</button><button class="btn">Simpan Pemakaian</button></div>`;
+ document.getElementById("form").onsubmit=e=>{e.preventDefault();let d=Object.fromEntries(new FormData(e.target));d.qty=+d.qty;let x=items.find(i=>i.code===d.code);if(!x)return;if(d.qty>x.stock){alert("Qty pemakaian melebihi stok tersedia.");return;}x.stock-=d.qty;usage.unshift(d);save();render();closeModal();};
+ document.getElementById("modal").classList.add("show");
+}
+function closeModal(){document.getElementById("modal").classList.remove("show")}
+document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));document.getElementById(b.dataset.page).classList.add("active");document.getElementById("title").textContent=b.textContent.replace(/^[^\s]+\s/,"");});
+render();
+</script>
+</body>
+</html>
